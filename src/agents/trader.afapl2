@@ -1,0 +1,66 @@
+// THIS AGENT IS RESPONSIBLE FOR PLACING BETS
+IMPORT com.agentfactory.afapl2.core.agent.ServiceSupport;
+IMPORT com.agentfactory.afapl2.core.agent.FIPACore;
+
+// bind to the service to receive info on environment
+COMMIT(?self, ?now, BELIEF(true), bindToService("TraderService"));
+
+ONTOLOGY trader {
+    PREDICATE state(?state);
+}
+
+// ###### MODULES ######
+// module for storing details on placed bets
+LOAD_MODULE PlacedBets modules.PlacedBets;
+
+// ###### AGENT-SPECIFIC PERCEPTORS ######
+// perceptor to get market data
+PERCEPTOR BalancePerceptor {
+    CLASS perceptors.BalancePerceptor;
+}
+
+// ###### BET PLACEMENT ACTUATORS ######
+// actuator to place a lay bet
+ACTION PlaceLay(?selectionName, ?selectionId, ?layOdds, ?layStake) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.PlaceLay;
+}
+
+// actuator to place a back bet
+ACTION PlaceBack(?selectionName, ?selectionId, ?layOdds, ?layStake) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.PlaceBack;
+}
+
+// actuator to update placed bets
+ACTION AddPlacedBet(?selectionId, ?selectionOdds, ?selectionStake) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.AddPlacedBet;
+}
+
+// ###### RESPOND TO REQUESTS ######
+// back requested
+BELIEF(fipaMessage(request, sender(?name, ?addresses),
+    PlaceBack(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake))) =>
+    COMMIT(?self, ?now, BELIEF(true),
+       SEQ(PlaceBack(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake),
+       AddPlacedBet(?selectionId, ?selectionOdds, ?selectionStake)));
+     
+// lay requested
+BELIEF(fipaMessage(request, sender(?name, ?addresses),
+    PlaceLay(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake))) =>
+    COMMIT(?self, ?now, BELIEF(true),
+       SEQ(PlaceLay(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake),
+       AddPlacedBet(?selectionId, ?selectionOdds, ?selectionStake)));
+ 
+ /*BELIEF(fipaMessage(request, sender(?name, ?addresses),
+    PlaceBack(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake))) =>
+    COMMIT(?self, ?now, BELIEF(true),
+        AddPlacedBet(?selectionId));
+     //PlaceBack(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake));*/ 

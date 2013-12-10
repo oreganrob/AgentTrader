@@ -1,0 +1,47 @@
+// each strategy agent implements a different trading strategy
+IMPORT agents.AbstractStrategy;
+
+ONTOLOGY strategy {
+    PREDICATE state(?state);
+    PREDICATE marketLocale(?locale);
+    PREDICATE marketSportId(?sport);
+    PREDICATE marketInRunning(?inrunning);
+    PREDICATE marketMatched(?marketMatched);
+    PREDICATE selectionMatched(?selectionMatched);
+    PREDICATE marketStatus(?status);
+    PREDICATE marketPlaces(?places);
+    PREDICATE tradingAgent(?name, ?addresses);
+    PREDICATE bestLay(?name, ?id, ?odds, ?stake);
+}
+
+// ###### DECISION MAKING ######
+// This strategy is intended to simply highlight some of the
+// beliefs about the environment. With betting exchanges(i.e. Betfair)...
+// ...they provide all sorts of data on the market you are looking at.
+// for example, they tell you how much money has already being traded/betted
+// on each selection/horse and on the entire market. they also show how much
+// money is available at each of the odds brackets. with this data we can setup
+// basic trading strategies.
+// this strategy only runs on UK (GBR) horse racing (sport id of 7)
+// where the market status is active (ACTIVE), is a win market (1 place)
+// and is not in-running. It then also does various checks on some of the
+// market data. Before we will place a bet, the market has to have
+// traded at least 250k, the horse we are looking at has to have traded 50k
+// and the odds have to be greater than 5.0 but less than 10.0. if all these
+// criteria are satisfied then we will back this selection to €10
+BELIEF(marketLocale(GBR))               // only uk markets
+& BELIEF(marketSportId(7))              // horse racing only
+& BELIEF(marketStatus(ACTIVE))          // the market must be active
+& BELIEF(marketPlaces(1))               // only win markets - 1 place/winner
+& BELIEF(marketInRunning(no))           // market not in-running
+& BELIEF(marketMatched(?marketMatched))
+& BELIEF(selectionMatched(?selectionMatched))
+& BELIEF(tradingAgent(?name, ?addresses))
+& BELIEF(bestLay(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake)) =>
+    COMMIT(?self, ?now, BELIEF(true),
+        SEQ(Greater_Than(?selectionOdds, 5),        // odds are greater than 5.0
+            Less_Than(?selectionOdds, 10),          // odds are less than 10.0
+            Greater_Than(?marketMatched, 250000),   // at least 250k traded on event
+            Greater_Than(?selectionMatched, 50000), // at least 50k traded on horse
+            request(agentID(?name, ?addresses),
+                PlaceBack(?selectionName, ?selectionId, ?selectionOdds, 10))));

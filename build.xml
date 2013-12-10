@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="AF Template" default="default" basedir=".">
+   <description>Builds, tests, and runs the project AF Template.</description>
+   <import file="nbproject/build-impl.xml"/>
+
+   <!-- compile a single afapl2 file -->
+   <target name="compile-single-afapl2" depends="init,taskdefs,-pre-pre-compile">
+     <afapl2c destdir="${build.classes.dir}" classpath="${run.classpath}" fork="true" includes="${afapl2c.includes}">
+       <src>
+         <pathelement location="${src.dir}"/>
+       </src>
+     </afapl2c>
+   </target>
+   
+   <!-- define the Agent Factory-specific ant tasks -->
+   <target name="taskdefs">
+     <taskdef classpath="${libs.AF-Library.classpath}" resource="com/agentfactory/ant/taskdefs.properties"/>
+   </target>
+   
+   <!-- runs as part of the build process after compiling Java files in order to compile afapl2 files -->
+   <target name="-post-compile" depends="taskdefs">
+     <afapl2c destdir="${build.classes.dir}" classpath="${run.classpath}" fork="true">
+       <src>
+         <pathelement location="${src.dir}"/>
+       </src>
+       <include name="**/*.afapl2"/>
+     </afapl2c>
+   </target>
+
+   <!-- run agent factory -->
+   <target name="run-platform" depends="init,taskdefs,compile">
+     <agentfactory aps="${aps.file}" cfg="${cfg.file}" afhome="${afhome.dir}" classpath="${run.classpath}"/>
+   </target>
+</project>

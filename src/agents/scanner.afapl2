@@ -1,0 +1,36 @@
+IMPORT agents.AbstractStrategy;
+
+ONTOLOGY strategy {
+    PREDICATE state(?state);
+    PREDICATE marketStatus(?status);
+}
+
+// ###### AGENT-SPECIFIC ACTUATORS ######
+// actuator to refresh the market data
+// for other interested agents
+ACTION RefreshMarketData {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.MarketRefresh;
+}
+
+// actuator to stop scanning a closed market
+ACTION MarketClosed {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.MarketClosed;
+}
+
+// ###### DECISION MAKING ######
+// as long as the market is not closed keep scanning it
+// markets can be ACTIVE or SUSPENDED. if suspended they
+// may become active again
+BELIEF(state(scanning))
+& !BELIEF(marketStatus(CLOSED)) =>
+    COMMIT(?self, ?now, BELIEF(true), RefreshMarketData);
+
+// if the market is now closed then stop scanning
+BELIEF(marketStatus(CLOSED)) =>
+    COMMIT(?self, ?now, BELIEF(true), MarketClosed);

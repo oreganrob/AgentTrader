@@ -1,0 +1,29 @@
+// each strategy agent implements a different trading strategy
+IMPORT agents.AbstractStrategy;
+
+ONTOLOGY strategy {
+    PREDICATE state(?state);
+    PREDICATE marketLocale(?locale);
+    PREDICATE marketSportId(?sport);
+    PREDICATE marketInRunning(?inrunning);
+    PREDICATE tradingAgent(?name, ?addresses);
+    PREDICATE marketStatus(?status);
+    PREDICATE marketPlaces(?places);
+    PREDICATE bestLay(?name, ?id, ?odds, ?stake);
+}
+
+// ###### DECISION MAKING ######
+// lay every horse that goes under odds of 1.5 in-running to €10
+// this is a well-known trading strategy. if you manage to lay 2 or more
+// horses below odds of 2.0 then you win on every horse
+//BELIEF(marketLocale(GBR))               // only uk markets
+//& BELIEF(marketSportId(7))              // horse racing only
+BELIEF(marketStatus(ACTIVE))          // the market must be active
+& BELIEF(marketPlaces(1))               // only win markets - 1 place/winner
+& BELIEF(marketInRunning(yes))          // market is in-running
+& BELIEF(tradingAgent(?name, ?addresses))
+& BELIEF(bestLay(?selectionName, ?selectionId, ?selectionOdds, ?selectionStake)) =>
+    COMMIT(?self, ?now, BELIEF(true),
+        SEQ(Less_Than(?selectionOdds, 1.5),
+            request(agentID(?name, ?addresses),
+                PlaceLay(?selectionName, ?selectionId, ?selectionOdds, 10))));

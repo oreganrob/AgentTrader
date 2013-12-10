@@ -1,0 +1,52 @@
+IMPORT com.agentfactory.afapl2.core.agent.ServiceSupport;
+IMPORT com.agentfactory.afapl2.core.agent.FIPACore;
+
+// bind to the service to receive info on environment
+COMMIT(?self, ?now, BELIEF(true), bindToService("TraderService"));
+
+ONTOLOGY strategy {
+    PREDICATE state(?state);
+    PREDICATE availableBalance(?balance);
+}
+
+// ###### AGENT-SPECIFIC ACTUATORS ######
+// actuator to refresh the market data
+// for other interested agents
+ACTION RefreshAccountBalance {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.AccountRefresh;
+}
+
+// the less than comparison. checks if ?x is <= ?y
+ACTION Less_Than(?x, ?y) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.LessThan;
+}
+
+// the greater than comparison. checks if ?x is >= ?y
+ACTION Greater_Than(?x, ?y) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.GreaterThan;
+}
+
+// ###### DECISION MAKING ######
+// as long as the market is not closed keep scanning it
+// markets can be ACTIVE or SUSPENDED. if suspended they
+// may become active again
+BELIEF(state(scanning)) =>
+    COMMIT(?self, ?now, BELIEF(true),
+        SEQ(RefreshAccountBalance, DELAY(10)));
+
+// respond to requests for exposure checks
+BELIEF(fipaMessage(request, sender(?name, ?address), CheckExposure(?stake)))
+ & BELIEF(availableBalance(?balance)) =>
+    COMMIT(?self, ?now, BELIEF(true),
+        ATTEMPT(Greater_Than(?balance, ?stake),
+        inform(agentID(?name, ?address), success),
+        inform(agentID(?name, ?address), fail)));

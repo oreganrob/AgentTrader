@@ -1,0 +1,47 @@
+// each strategy agent implements a different trading strategy
+IMPORT agents.AbstractStrategy;
+
+ONTOLOGY strategy {
+    PREDICATE state(?state);
+    PREDICATE marketLocale(?locale);
+    PREDICATE marketSportId(?sport);
+    PREDICATE marketInRunning(?inrunning);
+    PREDICATE tradingAgent(?name, ?addresses);
+    PREDICATE marketStatus(?status);
+    PREDICATE marketPlaces(?places);
+    PREDICATE wom(?name, ?id, ?backOdds, ?layOdds, ?wom);
+}
+
+// actuator to update placed bets
+/*ACTION AddPlacedBet(?selectionId, ?selectionOdds, ?selectionStake) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.AddPlacedBet;
+}*/
+
+// ###### DECISION MAKING ######
+// weight of money trading strategy
+// this is a well known strategy for predicting market movements
+// this is a very basic implementation of the strategy
+// the basic idea is that if there is more money available
+// to trade on the back side compared to the lay side then more
+// people are trying to lay the horse so it might drift
+// normally averages are built around these figures and other data added in
+// for the sake of simplicity, this startegy simply compares the amount
+// available to back to the amount available to lay, looking for horses that
+// may drift. if we identify a horse that may drift based on its weight of money
+// then we back and lay to make a profit regardless of the outcome
+//BELIEF(marketLocale(GBR))               // only uk markets
+//& BELIEF(marketSportId(7))              // horse racing only
+BELIEF(marketStatus(ACTIVE))          // the market must be active
+& BELIEF(marketPlaces(1))               // only win markets - 1 place/winner
+& BELIEF(tradingAgent(?name, ?addresses))   // know location of trading agent
+& BELIEF(wom(?selectionName, ?selectionId, ?backOdds, ?layOdds, ?wom)) =>
+    COMMIT(?self, ?now, BELIEF(true),
+        SEQ(Greater_Than(?wom, 75),
+            request(agentID(?name, ?addresses),
+                PlaceLay(?selectionName, ?selectionId, ?backOdds, 10)),
+            request(agentID(?name, ?addresses),
+                PlaceBack(?selectionName, ?selectionId, ?layOdds, 10))
+            ));

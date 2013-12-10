@@ -1,0 +1,2 @@
+This file is used to distinguish Agent Factory projects from other J2SE projects
+and should never be deleted.

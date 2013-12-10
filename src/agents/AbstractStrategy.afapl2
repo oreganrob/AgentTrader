@@ -1,0 +1,51 @@
+// Abstract strategy for each betting strategy to inherit from
+
+IMPORT com.agentfactory.afapl2.core.agent.ServiceSupport;
+IMPORT com.agentfactory.afapl2.core.agent.FIPACore;
+
+// bind to the service to receive info on environment
+COMMIT(?self, ?now, BELIEF(true), bindToService("TraderService"));
+
+// ###### MODULES ######
+// module for storing details on placed bets
+//LOAD_MODULE PlacedBets2 modules.PlacedBets;
+
+// ###### PERCEPTORS ######
+// perceptor to get market data
+PERCEPTOR MarketPerceptor {
+    CLASS perceptors.MarketPerceptor;
+}
+
+// perceptor for trading agent to request bets
+PERCEPTOR TraderPerceptor {
+    CLASS perceptors.TraderPerceptor;
+}
+
+// perceptor for module that stores how many
+// bets have been placed on each horse
+/*PERCEPTOR PlacedBetsPerceptor {
+    CLASS perceptors.PlacedBetsPerceptor;
+}*/
+
+// ###### COMPARISON OPERATORS ######
+// the built-in comparison operators only work with integers
+// odds in sporting events are decimal to a precision of 2 places
+// for most of the automated strategies we need to be able to do comparisons
+// so i implemented actuators that can do the comparison and use these
+// in conjunction with the SEQ() operator to achieve the desired functionality
+
+// the less than comparison. checks if ?x is <= ?y
+ACTION Less_Than(?x, ?y) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.LessThan;
+}
+
+// the greater than comparison. checks if ?x is >= ?y
+ACTION Greater_Than(?x, ?y) {
+   PRECONDITION BELIEF(true);
+   POSTCONDITION BELIEF(true);
+
+   CLASS actuators.GreaterThan;
+}
